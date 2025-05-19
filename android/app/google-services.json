@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "40389016946",
+    "firebase_url": "https://translation-d0f37-default-rtdb.firebaseio.com",
+    "project_id": "translation-d0f37",
+    "storage_bucket": "translation-d0f37.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:40389016946:android:9747bdb931ae6b4a82f1eb",
+        "android_client_info": {
+          "package_name": "com.example.trans_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9CuBfspzV71skOzYnKIzstHKDJYw_mBI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

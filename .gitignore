@@ -1,34 +1,45 @@
-**/dgph
-*.mode1v3
-*.mode2v3
-*.moved-aside
-*.pbxuser
-*.perspectivev3
-**/*sync/
-.sconsign.dblite
-.tags*
-**/.vagrant/
-**/DerivedData/
-Icon?
+# Dart / Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+**/build/
+
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# iOS / Xcode
 **/Pods/
 **/.symlinks/
-profile
+**/DerivedData/
 xcuserdata
-**/.generated/
-Flutter/App.framework
-Flutter/Flutter.framework
-Flutter/Flutter.podspec
-Flutter/Generated.xcconfig
-Flutter/ephemeral/
-Flutter/app.flx
-Flutter/app.zip
-Flutter/flutter_assets/
-Flutter/flutter_export_environment.sh
-ServiceDefinitions.json
-Runner/GeneratedPluginRegistrant.*
+*.mode1v3
+*.mode2v3
+*.pbxuser
+*.perspectivev3
+*.moved-aside
+*.xcuserstate
+**/dgph
+**/*sync/
+profile
 
-# Exceptions to above rules.
-!default.mode1v3
-!default.mode2v3
-!default.pbxuser
-!default.perspectivev3
+# Flutter build artifacts
+Flutter/
+app.*.symbols
+app.*.map.json
+
+# Android artifacts
+/android/app/debug
+/android/app/profile
+/android/app/release

@@ -21,6 +21,10 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Patch qr_code_scanner to fix Gradle 8 issue
+        run: |
+          sed -i '1s/^/namespace "com.babarivi.qrcodescanner"\n/'  $HOME/.pub-cache/hosted/pub.dev/qr_code_scanner-1.0.1/android/build.gradle
+
       - name: Build APK
         run: flutter build apk --release
 

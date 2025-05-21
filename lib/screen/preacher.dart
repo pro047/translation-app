@@ -164,26 +164,36 @@ class _PreacherScreenState extends State<PreacherScreen> {
 
     _resetInactivityTimer();
 
-    final sentenceRegex = RegExp(r'[^.!?]+[.!?]');
-    final matches = sentenceRegex.allMatches(inputText).toList();
-    if (matches.isEmpty) return;
+    String targetText;
 
-    final lastSentence = matches.last.group(0)!.trim();
+    if (inputText.length < 30) {
+      final sentenceRegex = RegExp(r'[^.!?]+[.!?]');
+      final matches = sentenceRegex.allMatches(inputText).toList();
 
-    if (_lastTranslatedTextList.contains(lastSentence)) return;
+      if (matches.isEmpty) return;
+
+      targetText = matches.last.group(0)!.trim();
+    } else {
+      targetText = inputText;
+    }
+
+    if (_lastTranslatedTextList.contains(targetText)) {
+      _appendLog('중복 문장 생략 : $targetText');
+      return;
+    }
 
     _updatedText('번역 중입니다');
 
     final stopwatch = Stopwatch()..start();
 
     try {
-      final translated = await DeeplService.translateKotoEn(lastSentence);
+      final translated = await DeeplService.translateKotoEn(targetText);
       await FirebaseService.uploadTranslatedText(translated);
       stopwatch.stop();
 
       _updatedText('$translated\n 처리 시간 : ${stopwatch.elapsedMilliseconds}ms');
 
-      _lastTranslatedTextList.add(lastSentence);
+      _lastTranslatedTextList.add(targetText);
 
       if (_lastTranslatedTextList.length > 30) {
         _lastTranslatedTextList.removeRange(0, 10);

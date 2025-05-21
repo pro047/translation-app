@@ -13,10 +13,14 @@ class _ChurchAuthScreenState extends State<ChurchAuthScreen> {
   final TextEditingController _codeController = TextEditingController();
 
   void _scanQrCode() async {
-    Navigator.push(
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => QrScannerScreen()),
     );
+
+    if (result is String) {
+      ChurchAuthService.verifyChurchcode(context, result);
+    }
   }
 
   @override

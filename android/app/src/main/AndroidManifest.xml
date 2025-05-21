@@ -1,4 +1,10 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+package="com.example.trans_app">
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-feature android:name="android.hardware.camera" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+
     <application
         android:label="trans_app"
         android:name="${applicationName}"
@@ -42,5 +48,4 @@
             <data android:mimeType="text/plain"/>
         </intent>
     </queries>
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 </manifest>

@@ -7,7 +7,7 @@ class ChurchAuthService {
     String code,
   ) async {
     final ref = FirebaseDatabase.instance.ref();
-    final snapshot = await ref.child('churches/&code').get();
+    final snapshot = await ref.child('churches').get();
 
     if (!context.mounted) return;
 

@@ -20,6 +20,7 @@ class _PreacherScreenState extends State<PreacherScreen> {
   final List<String> _lastTranslatedTextList = [];
 
   Timer? _inactivityTimer;
+  String _lastInputText = '';
   String _text = '';
   String _log = '';
   bool _isListening = false;
@@ -158,41 +159,40 @@ class _PreacherScreenState extends State<PreacherScreen> {
 
   Future<void> _handleSttResult(stt.SpeechRecognitionResult result) async {
     final inputText = result.recognizedWords.trim();
-    if (inputText.isEmpty) return;
+    if (inputText.isEmpty || inputText == _lastInputText) return;
+    _lastInputText = inputText;
 
     _resetInactivityTimer();
 
     final sentenceRegex = RegExp(r'[^.!?]+[.!?]');
-    final sentences = sentenceRegex
-        .allMatches(inputText)
-        .map((e) => e.group(0)!.trim())
-        .toList();
-    for (final sentence in sentences) {
-      if (_lastTranslatedTextList.contains(sentence)) continue;
-      _updatedText('번역 중입니다');
+    final matches = sentenceRegex.allMatches(inputText).toList();
+    if (matches.isEmpty) return;
 
-      final stopwatch = Stopwatch()..start();
+    final lastSentence = matches.last.group(0)!.trim();
 
-      try {
-        final translated = await DeeplService.translateKotoEn(sentence);
-        await FirebaseService.uploadTranslatedText(translated);
-        stopwatch.stop();
+    if (_lastTranslatedTextList.contains(lastSentence)) return;
 
-        _updatedText(
-          '$translated\n 처리 시간 : ${stopwatch.elapsedMilliseconds}ms',
-        );
+    _updatedText('번역 중입니다');
 
-        _lastTranslatedTextList.add(sentence);
+    final stopwatch = Stopwatch()..start();
 
-        if (_lastTranslatedTextList.length > 30) {
-          _lastTranslatedTextList.removeRange(0, 10);
-        }
-        print('전체 처리 시간 : ${stopwatch.elapsedMilliseconds}ms');
-        print('STT trnaslation ok, Firebase upload: $translated');
-      } catch (err) {
-        _appendLog('result err : $err');
-        print('translation error / upload err : $err');
+    try {
+      final translated = await DeeplService.translateKotoEn(lastSentence);
+      await FirebaseService.uploadTranslatedText(translated);
+      stopwatch.stop();
+
+      _updatedText('$translated\n 처리 시간 : ${stopwatch.elapsedMilliseconds}ms');
+
+      _lastTranslatedTextList.add(lastSentence);
+
+      if (_lastTranslatedTextList.length > 30) {
+        _lastTranslatedTextList.removeRange(0, 10);
       }
+      print('전체 처리 시간 : ${stopwatch.elapsedMilliseconds}ms');
+      print('STT trnaslation ok, Firebase upload: $translated');
+    } catch (err) {
+      _appendLog('result err : $err');
+      print('translation error / upload err : $err');
     }
   }
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:trans_app/service/firebase_service.dart';
 
 class ListenerScreen extends StatefulWidget {
   const ListenerScreen({super.key});
@@ -13,41 +14,61 @@ class ListenerScreen extends StatefulWidget {
 
 class _ListenerScreenState extends State<ListenerScreen> {
   final FlutterTts _tts = FlutterTts();
+  final List<String> _spokenTexts = [];
+  final List<String> _ttsQueue = [];
+
+  String _currentText = '대기 중';
+  bool _isSpeaking = false;
+
   late StreamSubscription<DatabaseEvent> _subscription;
   late DatabaseReference _textRef;
-
-  String _translatedText = '대기 중';
-
-  final _ttsQueue = TTSQueueManager();
-  final TextEditingController _controller = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    FirebaseService.clearDatabase();
+    _initializeTts();
+    _listenToFirebase();
+  }
 
-    _tts.setLanguage("en-US");
-    _tts.setSpeechRate(0.5);
+  void _initializeTts() async {
+    await _tts.setLanguage("en-US");
+    await _tts.setSpeechRate(0.5);
+    _tts.setCompletionHandler(() {
+      _isSpeaking = false;
+      _trySpeakNext();
+    });
+  }
 
-    _ttsQueue.setTts(_tts);
-
-    _textRef = FirebaseDatabase.instance.ref('translatedText/text');
-
-    _subscription = _textRef.onValue.listen((DatabaseEvent event) async {
-      final data = event.snapshot.value;
-      if (data != null || mounted) {
-        final text = data.toString();
-        setState(() {
-          _translatedText = text;
-        });
-
-        _ttsQueue.addText(text);
+  void _listenToFirebase() {
+    _textRef = FirebaseDatabase.instance.ref('translatedText');
+    _subscription = _textRef.onChildAdded.listen((event) {
+      final newData = event.snapshot.value?.toString();
+      if (newData != null && !_spokenTexts.contains(newData)) {
+        _spokenTexts.add(newData);
+        _enqueueAndSpeak(newData);
       }
     });
   }
 
+  void _enqueueAndSpeak(String text) {
+    _ttsQueue.add(text);
+    _trySpeakNext();
+  }
+
+  void _trySpeakNext() {
+    if (_isSpeaking || _ttsQueue.isEmpty) return;
+
+    final nextText = _ttsQueue.removeAt(0);
+    _isSpeaking = true;
+    _currentText = nextText;
+    setState(() {});
+    _tts.speak(_currentText);
+  }
+
   @override
   void dispose() {
-    _ttsQueue.dispose();
+    _tts.stop();
     _subscription.cancel();
     super.dispose();
   }
@@ -60,65 +81,19 @@ class _ListenerScreenState extends State<ListenerScreen> {
         child: Column(
           children: [
             Text(
-              _translatedText,
+              _currentText,
               style: TextStyle(fontSize: 24),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 40),
+            Text(
+              '읽은 문장 수 ${_spokenTexts.length}',
+              style: TextStyle(fontSize: 20, color: Colors.grey),
+            ),
             Divider(),
-            Text('입력 후 말해보기'),
-            TextField(
-              controller: _controller,
-              decoration: InputDecoration(hintText: '문장 입력'),
-            ),
-            SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: () async {
-                final input = _controller.text.trim();
-                if (input.isEmpty) return;
-              },
-              child: Text('입력한 문장 읽기'),
-            ),
           ],
         ),
       ),
     );
-  }
-}
-
-class TTSQueueManager {
-  FlutterTts? _tts;
-  final List<String> _queue = [];
-  bool _isSpeaking = false;
-  String? _lastQueueText;
-
-  void setTts(FlutterTts tts) {
-    _tts = tts;
-    _tts!.setCompletionHandler(() {
-      _isSpeaking = false;
-      _speakNext();
-    });
-  }
-
-  void addText(String text) {
-    if (text == _lastQueueText) return;
-    _lastQueueText = text;
-    _queue.add(text);
-    if (!_isSpeaking) {
-      _speakNext();
-    }
-  }
-
-  void _speakNext() {
-    if (_queue.isEmpty) return;
-
-    final text = _queue.removeAt(0);
-    _isSpeaking = true;
-    _tts!.speak(text);
-  }
-
-  void dispose() {
-    _tts!.stop();
-    _queue.clear();
   }
 }

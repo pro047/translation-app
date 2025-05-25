@@ -3,8 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_recognition_result.dart' as stt;
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:trans_app/service/deepl_service.dart';
-import 'package:trans_app/service/firebase_service.dart';
+import 'package:trans_app/service/sst_queue.dart';
 
 class PreacherScreen extends StatefulWidget {
   const PreacherScreen({super.key});
@@ -17,14 +16,20 @@ class _PreacherScreenState extends State<PreacherScreen> {
   final stt.SpeechToText _speech = stt.SpeechToText();
   final TextEditingController _controller = TextEditingController();
   final Duration _inactivityDuration = Duration(seconds: 15);
+  final Duration _silenceDurationThreshold = Duration(seconds: 1);
   final List<String> _lastTranslatedTextList = [];
+  final TranslationQueue _translationQueue = TranslationQueue();
+  final double _silenceThreshold = 1.2;
 
+  DateTime? _lastSoundTime;
+  Timer? _silenceTimer;
   Timer? _inactivityTimer;
   String _lastInputText = '';
   String _text = '';
   String _log = '';
+  double _currentSoundLevel = 0.0;
   bool _isListening = false;
-  bool _shouldKeepListenging = true;
+  bool _shouldKeepListening = true;
 
   @override
   void dispose() {
@@ -47,16 +52,24 @@ class _PreacherScreenState extends State<PreacherScreen> {
               label: Text(_isListening ? '듣는 중...' : '마이크 시작'),
               icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
             ),
+            SizedBox(height: 12),
+            LinearProgressIndicator(
+              value: _currentSoundLevel / 10.0,
+              minHeight: 10,
+              backgroundColor: Colors.grey[300],
+              color: Colors.green,
+            ),
             ElevatedButton(
-              onPressed: _hanldeManualInput,
-              child: Text('직접 입력 -> 번역 / 업로드'),
+              onPressed: () {
+                if (_lastInputText.isNotEmpty) {
+                  _appendLog('수동 문장 처리 실행 : $_lastInputText');
+                  _handleFinalizedInput(_lastInputText);
+                }
+              },
+              child: Text('수동 번역'),
             ),
             Text(_text),
             Expanded(child: SingleChildScrollView(child: SelectableText(_log))),
-            TextField(
-              controller: _controller,
-              decoration: InputDecoration(hintText: '텍스트 입력'),
-            ),
           ],
         ),
       ),
@@ -75,11 +88,12 @@ class _PreacherScreenState extends State<PreacherScreen> {
           switch (status) {
             case 'done':
             case 'notListening':
-              if (!_shouldKeepListenging) return;
+              if (!_shouldKeepListening) return;
               await _speech.cancel();
-              Future.delayed(Duration(milliseconds: 200)).then((_) {
-                if (!_speech.isListening) _startListening();
-              });
+              await Future.delayed(Duration(milliseconds: 300));
+              if (!_speech.isListening) {
+                _startListening();
+              }
               break;
           }
         },
@@ -91,7 +105,7 @@ class _PreacherScreenState extends State<PreacherScreen> {
           _inactivityTimer?.cancel();
 
           Future.delayed(Duration(microseconds: 300), () {
-            if (!_shouldKeepListenging && !_isListening) {
+            if (_shouldKeepListening && !_isListening) {
               _appendLog('error 후 stt 재시작');
               _startListening();
             }
@@ -102,9 +116,31 @@ class _PreacherScreenState extends State<PreacherScreen> {
       if (available) {
         setState(() {
           _isListening = true;
-          _shouldKeepListenging = true;
+          _shouldKeepListening = true;
         });
         _startListening();
+      }
+    }
+  }
+
+  void _onSoundLevelChange(double level) {
+    setState(() {
+      _currentSoundLevel = level.clamp(0.0, 10.0);
+    });
+
+    final now = DateTime.now();
+    if (level > _silenceThreshold) {
+      _lastSoundTime = now;
+      _silenceTimer?.cancel();
+    } else {
+      final silenceTime = now.difference(_lastSoundTime ?? now);
+      if (silenceTime > _silenceDurationThreshold) {
+        if (_silenceTimer == null || !_silenceTimer!.isActive) {
+          _silenceTimer = Timer(Duration(milliseconds: 200), () {
+            _appendLog('문장 감지 -> 문장 종료 처리');
+            _handleFinalizedInput(_lastInputText);
+          });
+        }
       }
     }
   }
@@ -117,14 +153,8 @@ class _PreacherScreenState extends State<PreacherScreen> {
         _speech.stop();
       }
       Future.delayed(Duration(milliseconds: 200), () {
-        if (_shouldKeepListenging) _startListening();
+        if (_shouldKeepListening) _startListening();
       });
-    });
-  }
-
-  void _appendLog(String message) {
-    setState(() {
-      _log += '$message\n';
     });
   }
 
@@ -137,13 +167,14 @@ class _PreacherScreenState extends State<PreacherScreen> {
     _appendLog('Stt start listening');
 
     _speech.listen(
-      pauseFor: Duration(seconds: 10),
-      listenFor: Duration(minutes: 5),
+      pauseFor: Duration(hours: 1),
+      listenFor: Duration(hours: 1),
       onResult: _handleSttResult,
+      onSoundLevelChange: _onSoundLevelChange,
       localeId: 'ko_KR',
       listenOptions: stt.SpeechListenOptions(
         partialResults: true,
-        cancelOnError: true,
+        cancelOnError: false,
         listenMode: stt.ListenMode.dictation,
         autoPunctuation: true,
       ),
@@ -151,7 +182,7 @@ class _PreacherScreenState extends State<PreacherScreen> {
   }
 
   void _stopListenging() {
-    _shouldKeepListenging = false;
+    _shouldKeepListening = false;
     _speech.cancel();
     _inactivityTimer?.cancel();
     setState(() => _isListening = false);
@@ -159,66 +190,48 @@ class _PreacherScreenState extends State<PreacherScreen> {
 
   Future<void> _handleSttResult(stt.SpeechRecognitionResult result) async {
     final inputText = result.recognizedWords.trim();
-    if (inputText.isEmpty || inputText == _lastInputText) return;
+
+    if (inputText.isEmpty) {
+      _appendLog('inputText is empty');
+      return;
+    }
+
+    if (inputText == _lastInputText) {
+      _appendLog('inputText : $inputText');
+      return;
+    }
+
     _lastInputText = inputText;
 
     _resetInactivityTimer();
 
-    String targetText;
-
-    if (inputText.length < 30) {
-      final sentenceRegex = RegExp(r'[^.!?]+[.!?]');
-      final matches = sentenceRegex.allMatches(inputText).toList();
-
-      if (matches.isEmpty) return;
-
-      targetText = matches.last.group(0)!.trim();
-    } else {
-      targetText = inputText;
-    }
-
-    if (_lastTranslatedTextList.contains(targetText)) {
-      _appendLog('중복 문장 생략 : $targetText');
-      return;
-    }
-
-    _updatedText('번역 중입니다');
-
-    final stopwatch = Stopwatch()..start();
-
-    try {
-      final translated = await DeeplService.translateKotoEn(targetText);
-      await FirebaseService.uploadTranslatedText(translated);
-      stopwatch.stop();
-
-      _updatedText('$translated\n 처리 시간 : ${stopwatch.elapsedMilliseconds}ms');
-
-      _lastTranslatedTextList.add(targetText);
-
-      if (_lastTranslatedTextList.length > 30) {
-        _lastTranslatedTextList.removeRange(0, 10);
-      }
-      print('전체 처리 시간 : ${stopwatch.elapsedMilliseconds}ms');
-      print('STT trnaslation ok, Firebase upload: $translated');
-    } catch (err) {
-      _appendLog('result err : $err');
-      print('translation error / upload err : $err');
+    if (result.finalResult) {
+      _appendLog('finalresult로 문장 종료 감지');
+      _handleFinalizedInput(inputText);
     }
   }
 
-  void _updatedText(String value) {
+  void _handleFinalizedInput(String inputText) {
+    final sentence = inputText.trim();
+    if (sentence.isEmpty || _lastTranslatedTextList.contains(sentence)) return;
+
+    _lastTranslatedTextList.add(sentence);
+    if (_lastTranslatedTextList.length > 30) {
+      _lastTranslatedTextList.removeRange(0, 10);
+    }
+
+    _translationQueue.add(sentence, _onTranslationUpdate, _appendLog);
+  }
+
+  void _onTranslationUpdate(String value) {
     setState(() {
       _text = value;
     });
   }
 
-  Future<void> _hanldeManualInput() async {
-    final input = _controller.text.trim();
-    if (input.isEmpty) return;
-
-    final translated = await DeeplService.translateKotoEn(input);
-    await FirebaseService.uploadTranslatedText(translated);
-
-    print('Text translation ok, Firebase upload: $translated');
+  void _appendLog(String message) {
+    setState(() {
+      _log += '$message\n';
+    });
   }
 }

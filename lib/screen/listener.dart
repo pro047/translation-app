@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:trans_app/service/firebase_service.dart';
+import 'package:trans_app/service/api/firebase_service.dart';
 
 class ListenerScreen extends StatefulWidget {
   const ListenerScreen({super.key});

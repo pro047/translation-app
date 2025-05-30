@@ -1,36 +1,36 @@
 import 'dart:collection';
 
+import 'package:trans_app/interfaces/sentence_translator.dart';
 import 'package:trans_app/service/api/firebase_service.dart';
 import 'package:trans_app/service/api/translation_service.dart';
 
-class TranslationQueue {
-  TranslationQueue._();
-  static final TranslationQueue instance = TranslationQueue._();
-
-  List<String> get pending => _queue.toList();
-
+class TranslationQueue implements SentenceTranslator {
+  final void Function(String message)? onLog;
   final Queue<String> _queue = Queue();
   final Stopwatch _stopwatch = Stopwatch();
 
   bool _isTranslating = false;
 
-  void add(String sentence, Function(String) onUpdate, Function(String) onLog) {
+  TranslationQueue({this.onLog});
+
+  @override
+  void add(String sentence) {
     if (_queue.contains(sentence)) {
-      onLog('[중복 문장으로 번역 건너뜀] $sentence');
+      onLog?.call('[중복 문장으로 번역 건너뜀] $sentence');
       return;
     }
 
     _queue.add(sentence);
 
-    onLog('[translation Queue] : $sentence');
-    onLog('[translation Queue State] : $_queue');
+    onLog?.call('[큐에 추가] : $sentence');
+    onLog?.call('[현재 큐 상태] : $_queue');
 
-    onUpdate('번역 큐에 들어옴 : $sentence');
-
-    _startNext(onUpdate, onLog);
+    if (!_isTranslating) {
+      _startTranslate();
+    }
   }
 
-  void _startNext(Function(String) onUpdate, Function(String) onLog) async {
+  void _startTranslate() async {
     if (_isTranslating || _queue.isEmpty) return;
 
     _isTranslating = true;
@@ -38,8 +38,8 @@ class TranslationQueue {
     final sentence = _queue.removeFirst();
 
     try {
-      onLog('[번역 시작] : $sentence');
-      onUpdate('번역 중입니다...');
+      onLog?.call('[번역 시작] : $sentence');
+      onLog?.call('번역 중입니다...');
 
       _stopwatch.reset();
       _stopwatch.start();
@@ -49,17 +49,20 @@ class TranslationQueue {
 
       if (translated?.isNotEmpty == true) {
         await FirebaseService.pushTranslatedSentence(translated!);
-        onUpdate('$translated\n 처리 시간: ${_stopwatch.elapsedMilliseconds}ms');
-        onLog('번역 완료: $sentence => $translated');
+        onLog?.call(
+          '[번역 결과] : $translated\n 처리 시간: ${_stopwatch.elapsedMilliseconds}ms',
+        );
+        onLog?.call('[번역 완료] : $sentence => $translated');
       } else {
-        onLog('[번역 실패] translated == null || emtpy');
-        onUpdate('[번역 실패] : $sentence');
+        onLog?.call('[번역 실패] translated == null || emtpy');
+        onLog?.call('[번역 실패] : $sentence');
       }
-    } catch (err) {
-      onLog('번역 실패 : $err');
+    } catch (err, stack) {
+      onLog?.call('번역 실패 : $err');
+      onLog?.call('$stack');
     } finally {
       _isTranslating = false;
-      _startNext(onUpdate, onLog);
+      _startTranslate();
     }
   }
 }

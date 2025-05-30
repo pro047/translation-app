@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_recognition_result.dart' as stt;
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:trans_app/service/queues/translation_queue.dart';
-import 'package:trans_app/service/queues/word_queue_manager.dart';
+import 'package:trans_app/service/queues/word_queue.dart';
 
 class PreacherScreen extends StatefulWidget {
   const PreacherScreen({super.key});

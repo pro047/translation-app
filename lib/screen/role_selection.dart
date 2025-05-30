@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:trans_app/screen/listener.dart';
-import 'package:trans_app/screen/preacher.dart';
+import 'package:trans_app/screen/preacher_screen.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
@@ -21,7 +21,7 @@ class RoleSelectionScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => PreacherScreen()),
+                  MaterialPageRoute(builder: (_) => PreacherSttScreen()),
                 );
               },
               child: Text('설교자\nPreacher'),

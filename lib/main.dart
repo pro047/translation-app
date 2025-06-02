@@ -27,6 +27,7 @@ class MyApp extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: Color(0xff3b82f6),
             foregroundColor: Colors.white,
+            elevation: 10,
             padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadiusGeometry.circular(12),

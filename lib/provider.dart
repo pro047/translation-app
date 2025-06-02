@@ -8,19 +8,20 @@ import 'package:trans_app/service/queues/validate_queue.dart';
 import 'package:trans_app/service/queues/word_queue.dart';
 
 final logProvider = StateProvider<String>((ref) => '');
-final maxWordsProvider = StateProvider<int>((ref) => 0);
-final maxLenProvider = StateProvider<int>((ref) => 0);
+final targetLangProvider = StateProvider<String>((ref) => 'EN');
+final sourceLangProvider = StateProvider<String>((ref) => 'KO');
 
 final translationQueueProvider = Provider<SentenceTranslator>(
   (ref) => TranslationQueue(
     onLog: (message) =>
         ref.read(logProvider.notifier).state += '[TranslationQueue] $message\n',
+    targetLang: ref.watch(targetLangProvider),
+    sourceLang: ref.watch(sourceLangProvider),
   ),
 );
 final validateQueueProvider = Provider<SentenceReceiver>(
   (ref) => ValidateQueue(
     translator: ref.watch(translationQueueProvider),
-    maxLen: ref.watch(maxLenProvider),
     onLog: (messag) =>
         ref.read(logProvider.notifier).state += '[ValidateQueue] $messag\n',
   ),
@@ -28,7 +29,6 @@ final validateQueueProvider = Provider<SentenceReceiver>(
 final wordQueueProvider = Provider<WordQueue>(
   (ref) => WordQueue(
     receiver: ref.watch(validateQueueProvider),
-    maxWords: ref.watch(maxWordsProvider),
     onLog: (message) {
       ref.read(logProvider.notifier).state += '[WordQueue] $message\n';
     },

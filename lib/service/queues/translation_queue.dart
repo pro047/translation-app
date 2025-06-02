@@ -6,12 +6,19 @@ import 'package:trans_app/service/api/translation_service.dart';
 
 class TranslationQueue implements SentenceTranslator {
   final void Function(String message)? onLog;
+  final String targetLang;
+  final String sourceLang;
+
   final Queue<String> _queue = Queue();
   final Stopwatch _stopwatch = Stopwatch();
 
   bool _isTranslating = false;
 
-  TranslationQueue({this.onLog});
+  TranslationQueue({
+    this.onLog,
+    required this.sourceLang,
+    required this.targetLang,
+  });
 
   @override
   void add(String sentence) {
@@ -44,7 +51,11 @@ class TranslationQueue implements SentenceTranslator {
       _stopwatch.reset();
       _stopwatch.start();
 
-      final translated = await TranslationService.translate(sentence);
+      final translated = await TranslationService.translate(
+        sentence,
+        targetLang,
+        sourceLang,
+      );
       _stopwatch.stop();
 
       if (translated?.isNotEmpty == true) {

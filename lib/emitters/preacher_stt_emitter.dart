@@ -4,13 +4,17 @@ import 'package:trans_app/interfaces/word_emitter.dart';
 class PreacherSttEmitter implements WordEmitter {
   final stt.SpeechToText _speech = stt.SpeechToText();
   String _lastRecognized = '';
+  void Function(double level)? onSoundLevel;
 
   @override
   void start(
     void Function(String word) onWord, {
     void Function(String status)? onStatus,
     void Function(String error)? onError,
+    void Function(double level)? onSoundLevel,
   }) async {
+    this.onSoundLevel = onSoundLevel;
+
     bool available = await _speech.initialize(
       onStatus: (status) async {
         if (onStatus != null) onStatus(status);
@@ -67,6 +71,9 @@ class PreacherSttEmitter implements WordEmitter {
           }
           _lastRecognized = text;
         }
+      },
+      onSoundLevelChange: (level) {
+        onSoundLevel?.call(level);
       },
       localeId: 'ko_KR',
       listenOptions: stt.SpeechListenOptions(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:trans_app/emitters/preacher_stt_emitter.dart';
 import 'package:trans_app/provider.dart';
+import 'package:trans_app/screen/animation/mic_wave_bar.dart';
 
 class PreacherSttScreen extends ConsumerStatefulWidget {
   const PreacherSttScreen({super.key});
@@ -11,13 +13,48 @@ class PreacherSttScreen extends ConsumerStatefulWidget {
 }
 
 class _PreacherSttScreenState extends ConsumerState<PreacherSttScreen> {
-  String _log = '';
+  double _soundLevel = 0.0;
   bool _isListening = false;
+
+  void toggleLang(WidgetRef ref) {
+    final currentTarget = ref.read(targetLangProvider);
+    currentTarget == 'EN'
+        ? (
+            ref.read(sourceLangProvider.notifier).state = 'EN',
+            ref.read(targetLangProvider.notifier).state = 'KO',
+          )
+        : (
+            ref.read(sourceLangProvider.notifier).state = 'KO',
+            ref.read(targetLangProvider.notifier).state = 'EN',
+          );
+  }
+
+  void toggleListening(PreacherSttEmitter emitter) {
+    setState(() {
+      if (_isListening) {
+        emitter.stop();
+        _isListening = false;
+      } else {
+        emitter.start((word) {
+          ref.read(wordQueueProvider).addWord(word);
+          onsSoundLevel:
+          (level) {
+            setState(() {
+              _soundLevel = level;
+            });
+          };
+        });
+        _isListening = true;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final log = ref.watch(logProvider);
     final emitter = ref.read(preacherSttEmitterProvider);
+    final currentTarget = ref.watch(targetLangProvider);
+
+    final directText = currentTarget == 'EN' ? '한국어 → 영어' : '영어 → 한국어';
 
     return Scaffold(
       appBar: AppBar(title: Text('설교자 Preacher')),
@@ -27,24 +64,49 @@ class _PreacherSttScreenState extends ConsumerState<PreacherSttScreen> {
           child: Column(
             children: [
               SizedBox(height: 200),
-              ElevatedButton.icon(
-                onPressed: () {
-                  setState(() {
-                    if (_isListening) {
-                      emitter.stop();
-                      _isListening = false;
-                    } else {
-                      emitter.start((word) {
-                        ref.read(wordQueueProvider).addWord(word);
-                      });
-                      _isListening = true;
-                    }
-                  });
-                },
-                label: Text(_isListening ? '듣는 중..' : '마이크 시작'),
-                icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
+              SizedBox(
+                width: 80,
+                height: 80,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    MicWaveBar(soundLevel: _soundLevel),
+                    InkWell(
+                      onTap: () => toggleListening(emitter),
+                      borderRadius: BorderRadius.circular(999),
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: _isListening
+                              ? Colors.redAccent
+                              : Colors.blueAccent,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          _isListening ? Icons.mic : Icons.mic_none,
+                          size: 36,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () => toggleLang(ref),
+                child: Text('언어 바꾸기'),
+              ),
+              SizedBox(height: 10),
+              Text(directText),
             ],
           ),
         ),

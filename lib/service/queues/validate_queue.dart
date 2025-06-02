@@ -4,19 +4,17 @@ import 'package:trans_app/interfaces/sentence_translator.dart';
 
 class ValidateQueue implements SentenceReceiver {
   final SentenceTranslator translator;
-  final int maxLen;
   final void Function(String message)? onLog;
 
   String? _lastSentence;
   DateTime? _lastSpoken;
   DateTime? _listeningStart;
 
-  ValidateQueue({required this.translator, required this.maxLen, this.onLog});
+  ValidateQueue({required this.translator, this.onLog});
 
   @override
   void receive(List<String> words) {
     onLog?.call('receive success');
-    onLog?.call('now maxLen: $maxLen');
     final now = DateTime.now();
     final sentence = words.join(' ').trim();
     onLog?.call('received : $sentence');
@@ -26,7 +24,6 @@ class ValidateQueue implements SentenceReceiver {
 
     if (_isEmpty(sentence)) return;
     if (_isDuplicate(sentence)) return;
-    if (_isTooLong(sentence)) return;
 
     if (!isChurchSentenceComplete(
       text: sentence,
@@ -59,16 +56,6 @@ class ValidateQueue implements SentenceReceiver {
       return true;
     }
     _lastSentence = sentence;
-    return false;
-  }
-
-  bool _isTooLong(String sentence) {
-    onLog?.call('sentence : $sentence');
-    onLog?.call('maxLen : $maxLen');
-    if (sentence.length >= maxLen) {
-      onLog?.call('[validate] too long sentence');
-      return true;
-    }
     return false;
   }
 

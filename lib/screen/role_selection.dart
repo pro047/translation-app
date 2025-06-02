@@ -7,36 +7,52 @@ class RoleSelectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '역할을 선택해주세요\nPlease select Your role',
-              style: TextStyle(fontSize: 20),
+    return Theme(
+      data: Theme.of(context).copyWith(
+        textTheme: Theme.of(context).textTheme.copyWith(
+          bodyLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+      ),
+      child: Scaffold(
+        body: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '역할을 선택해주세요\nPlease select Your role',
+                  style: TextStyle(fontSize: 20),
+                ),
+                SizedBox(height: 100),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PreacherSttScreen(),
+                          ),
+                        );
+                      },
+                      child: Text('설교자 Preacher'),
+                    ),
+
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => ListenerScreen()),
+                        );
+                      },
+                      child: Text('청중 Listener'),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => PreacherSttScreen()),
-                );
-              },
-              child: Text('설교자\nPreacher'),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => ListenerScreen()),
-                );
-              },
-              child: Text('청중\nListener'),
-            ),
-          ],
+          ),
         ),
       ),
     );

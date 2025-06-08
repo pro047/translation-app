@@ -1,8 +1,8 @@
-import 'package:trans_app/utils/church_sentence_endings.dart';
+import 'package:trans_app/utils/KoToEn/church_sentence_endings.dart';
 import 'package:trans_app/interfaces/sentence_receiver.dart';
 import 'package:trans_app/interfaces/sentence_translator.dart';
 
-class ValidateQueue implements SentenceReceiver {
+class KoToEnValidateQueue implements SentenceReceiver {
   final SentenceTranslator translator;
   final void Function(String message)? onLog;
 
@@ -10,7 +10,7 @@ class ValidateQueue implements SentenceReceiver {
   DateTime? _lastSpoken;
   DateTime? _listeningStart;
 
-  ValidateQueue({required this.translator, this.onLog});
+  KoToEnValidateQueue({required this.translator, this.onLog});
 
   @override
   void receive(List<String> words) {

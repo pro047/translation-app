@@ -1,4 +1,4 @@
-import 'package:trans_app/utils/regexp_creator.dart';
+import 'package:trans_app/utils/KoToEn/regexp_creator.dart';
 
 bool isChurchSentenceComplete({
   required String text,

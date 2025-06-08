@@ -33,17 +33,21 @@ class _PreacherSttScreenState extends ConsumerState<PreacherSttScreen> {
     setState(() {
       if (_isListening) {
         emitter.stop();
-        _isListening = false;
+        setState(() {
+          _isListening = false;
+        });
       } else {
-        emitter.start((word) {
-          ref.read(wordQueueProvider).addWord(word);
-          onsSoundLevel:
-          (level) {
+        emitter.start(
+          (word) {
+            ref.read(wordQueueProvider).addWord(word);
+          },
+          onSoundLevel: (level) {
             setState(() {
               _soundLevel = level;
             });
-          };
-        });
+          },
+          localeId: ref.read(sourceLangProvider) == 'KO' ? 'ko_KR' : 'en_US',
+        );
         _isListening = true;
       }
     });
@@ -53,6 +57,7 @@ class _PreacherSttScreenState extends ConsumerState<PreacherSttScreen> {
   Widget build(BuildContext context) {
     final emitter = ref.read(preacherSttEmitterProvider);
     final currentTarget = ref.watch(targetLangProvider);
+    final log = ref.watch(logProvider);
 
     final directText = currentTarget == 'EN' ? '한국어 → 영어' : '영어 → 한국어';
 
@@ -100,9 +105,19 @@ class _PreacherSttScreenState extends ConsumerState<PreacherSttScreen> {
                   ],
                 ),
               ),
-              SizedBox(height: 12),
+              // SizedBox(height: 20),
+              // Expanded(
+              //   child: SingleChildScrollView(
+              //     padding: EdgeInsets.all(16),
+              //     child: Text(log, style: TextStyle(fontSize: 16)),
+              //   ),
+              // ),
+              SizedBox(height: 50),
               ElevatedButton(
-                onPressed: () => toggleLang(ref),
+                onPressed: () {
+                  ref.read(logProvider.notifier).state = currentTarget;
+                  toggleLang(ref);
+                },
                 child: Text('언어 바꾸기'),
               ),
               SizedBox(height: 10),

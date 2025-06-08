@@ -18,6 +18,7 @@ class WordQueue {
   });
 
   void addWord(String word) {
+    print('wordState :$word');
     onLog?.call('WordState: $word');
     if (word.trim().isEmpty) return;
 

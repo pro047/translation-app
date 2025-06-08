@@ -3,11 +3,12 @@ import 'package:trans_app/emitters/preacher_stt_emitter.dart';
 import 'package:trans_app/interfaces/sentence_receiver.dart';
 import 'package:trans_app/interfaces/sentence_translator.dart';
 import 'package:trans_app/service/queues/translation_queue.dart';
-import 'package:trans_app/service/queues/validate_queue.dart';
+import 'package:trans_app/service/queues/validateQueue/en_to_ko_queue.dart';
+import 'package:trans_app/service/queues/validateQueue/ko_to_en_queue.dart';
 
 import 'package:trans_app/service/queues/word_queue.dart';
 
-final logProvider = StateProvider<String>((ref) => '');
+final logProvider = StateProvider<String>((ref) => 'log start\n');
 final targetLangProvider = StateProvider<String>((ref) => 'EN');
 final sourceLangProvider = StateProvider<String>((ref) => 'KO');
 
@@ -19,13 +20,24 @@ final translationQueueProvider = Provider<SentenceTranslator>(
     sourceLang: ref.watch(sourceLangProvider),
   ),
 );
-final validateQueueProvider = Provider<SentenceReceiver>(
-  (ref) => ValidateQueue(
-    translator: ref.watch(translationQueueProvider),
-    onLog: (messag) =>
-        ref.read(logProvider.notifier).state += '[ValidateQueue] $messag\n',
-  ),
-);
+final validateQueueProvider = Provider<SentenceReceiver>((ref) {
+  final source = ref.watch(sourceLangProvider);
+  final translator = ref.watch(translationQueueProvider);
+
+  if (source == 'KO') {
+    return KoToEnValidateQueue(
+      translator: translator,
+      onLog: (message) => ref.read(logProvider.notifier).state +=
+          '[ValidationQueue] $message\n',
+    );
+  } else {
+    return EnToKoValidateQueue(
+      translator: translator,
+      onLog: (message) => ref.read(logProvider.notifier).state +=
+          '[ValidationQueue] $message\n',
+    );
+  }
+});
 final wordQueueProvider = Provider<WordQueue>(
   (ref) => WordQueue(
     receiver: ref.watch(validateQueueProvider),
@@ -34,6 +46,8 @@ final wordQueueProvider = Provider<WordQueue>(
     },
   ),
 );
-final preacherSttEmitterProvider = Provider<PreacherSttEmitter>(
-  (ref) => PreacherSttEmitter(),
-);
+final preacherSttEmitterProvider = Provider<PreacherSttEmitter>((ref) {
+  return _singletonEmitter;
+});
+
+final _singletonEmitter = PreacherSttEmitter();

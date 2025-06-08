@@ -2,17 +2,19 @@ import 'dart:async';
 
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:trans_app/provider.dart';
 import 'package:trans_app/service/api/firebase_service.dart';
 
-class ListenerScreen extends StatefulWidget {
+class ListenerScreen extends ConsumerStatefulWidget {
   const ListenerScreen({super.key});
 
   @override
-  State<ListenerScreen> createState() => _ListenerScreenState();
+  ConsumerState<ConsumerStatefulWidget> createState() => _ListenerScreenState();
 }
 
-class _ListenerScreenState extends State<ListenerScreen> {
+class _ListenerScreenState extends ConsumerState<ListenerScreen> {
   final FlutterTts _tts = FlutterTts();
   final List<String> _spokenTexts = [];
   final List<String> _ttsQueue = [];
@@ -20,24 +22,37 @@ class _ListenerScreenState extends State<ListenerScreen> {
   String _currentText = '대기 중';
   bool _isSpeaking = false;
 
-  late StreamSubscription<DatabaseEvent> _subscription;
-  late DatabaseReference _textRef;
+  StreamSubscription<DatabaseEvent>? _subscription;
+  late final DatabaseReference _textRef;
 
   @override
   void initState() {
     super.initState();
     FirebaseService.clearDatabase();
-    _initializeTts();
-    _listenToFirebase();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeTtsWithLang();
+      _listenToFirebase();
+    });
   }
 
-  void _initializeTts() async {
-    await _tts.setLanguage("en-US");
-    await _tts.setSpeechRate(0.5);
-    _tts.setCompletionHandler(() {
-      _isSpeaking = false;
-      _trySpeakNext();
-    });
+  void _initializeTtsWithLang() {
+    final targetLang = ref.read(targetLangProvider);
+    final langCode = targetLang == 'EN' ? 'en-US' : 'ko-KR';
+    _initializeTts(langCode);
+  }
+
+  Future<void> _initializeTts(String langcode) async {
+    try {
+      await _tts.setLanguage(langcode);
+      await _tts.setSpeechRate(0.5);
+      _tts.setCompletionHandler(() {
+        _isSpeaking = false;
+        _trySpeakNext();
+      });
+    } catch (err) {
+      print('[tts] init error: $err');
+    }
   }
 
   void _listenToFirebase() {
@@ -69,7 +84,7 @@ class _ListenerScreenState extends State<ListenerScreen> {
   @override
   void dispose() {
     _tts.stop();
-    _subscription.cancel();
+    _subscription?.cancel();
     super.dispose();
   }
 
@@ -80,6 +95,7 @@ class _ListenerScreenState extends State<ListenerScreen> {
       body: Center(
         child: Column(
           children: [
+            SizedBox(height: 300),
             Text(
               _currentText,
               style: TextStyle(fontSize: 24),

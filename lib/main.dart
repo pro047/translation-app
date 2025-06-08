@@ -1,12 +1,16 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trans_app/screen/church_auth_qr.dart';
 import 'package:trans_app/screen/role_selection.dart';
+import 'package:trans_app/service/foreground/init_task.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  FlutterForegroundTask.initCommunicationPort();
+  await initForegroundTask();
   runApp(ProviderScope(child: MyApp()));
 }
 

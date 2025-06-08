@@ -1,13 +1,20 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
-class MicWaveBar extends StatelessWidget {
+class MicWaveBar extends StatefulWidget {
   final double soundLevel;
   const MicWaveBar({super.key, required this.soundLevel});
 
   @override
+  State<MicWaveBar> createState() => _MicWaveBarState();
+}
+
+class _MicWaveBarState extends State<MicWaveBar> {
+  @override
   Widget build(BuildContext context) {
-    final scale = 1.0 + (soundLevel / 100.0 * 0.5);
-    final opacity = (soundLevel / 100.0).clamp(0.2, 0.8);
+    final scale = 1.0 + sin(widget.soundLevel / 100.0 * pi) * 0.8;
+    final opacity = (widget.soundLevel / 100.0).clamp(0.2, 0.8);
 
     return AnimatedScale(
       scale: scale,
@@ -17,7 +24,7 @@ class MicWaveBar extends StatelessWidget {
         height: 100,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.blue.withValues(alpha: opacity),
+          color: Colors.greenAccent.withValues(alpha: opacity),
         ),
       ),
     );

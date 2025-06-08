@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trans_app/emitters/preacher_stt_emitter.dart';
 import 'package:trans_app/provider.dart';
 import 'package:trans_app/screen/animation/mic_wave_bar.dart';
+import 'package:trans_app/service/youtube_streaming.dart/constants/hlst_url.dart';
+import 'package:trans_app/service/youtube_streaming.dart/extract_audio_stream.dart';
+import 'package:trans_app/service/youtube_streaming.dart/stt_grpc_client.dart';
 
 class PreacherSttScreen extends ConsumerStatefulWidget {
   const PreacherSttScreen({super.key});
@@ -122,6 +125,29 @@ class _PreacherSttScreenState extends ConsumerState<PreacherSttScreen> {
               ),
               SizedBox(height: 10),
               Text(directText),
+              ElevatedButton(
+                onPressed: () async {
+                  final hlsUrl = Constants.hlsUrl;
+                  await extractAudioStream(hlsUrl);
+                },
+                child: const Text('Extract Audio Stream'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final sttClient = SttGrpcClient();
+
+                  await sttClient.streamRecognizeFromPcmFile(
+                    pcmFilePath:
+                        '/data/user/0/com.example.trans_app/app_flutter/output_1749376121078.pcm',
+                    onTextRecognized: (text) {
+                      print('실시간 인식 결과 : $text');
+                    },
+                  );
+
+                  await sttClient.shutdown();
+                },
+                child: Text('STT 테스트 실해'),
+              ),
             ],
           ),
         ),

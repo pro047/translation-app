@@ -54,7 +54,10 @@ class _ChurchAuthScreenState extends State<ChurchAuthScreen> {
             ElevatedButton(
               onPressed: () {
                 final code = _codeController.text.trim();
+                print(code);
+                print('context : $context');
                 ChurchAuthService.verifyChurchcode(context, code);
+                print('exe verifyChurchcode');
               },
               child: Text('확인'),
             ),

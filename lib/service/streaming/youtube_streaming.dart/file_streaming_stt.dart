@@ -4,11 +4,11 @@ import 'dart:io';
 import 'package:grpc/grpc.dart';
 import 'package:trans_app/generated/google/cloud/speech/v1/cloud_speech.pbgrpc.dart';
 
-class SttGrpcClient {
+class FileStreamingStt {
   late final ClientChannel _channel;
   late final SpeechClient _stub;
 
-  SttGrpcClient() {
+  FileStreamingStt() {
     _channel = ClientChannel(
       'speech.googleapis.com',
       port: 443,
@@ -31,18 +31,9 @@ class SttGrpcClient {
         metadata: {'x-goog-api-key': 'AIzaSyC3F8r5Z1hA8ZWH8atk7oN8MPQdfP9odB8'},
       ),
     );
-
-    final config = StreamingRecognitionConfig(
-      config: RecognitionConfig(
-        encoding: RecognitionConfig_AudioEncoding.LINEAR16,
-        sampleRateHertz: 16000,
-        languageCode: 'ko-KR',
-      ),
-      interimResults: true,
-      singleUtterance: false,
+    requestStream.add(
+      StreamingRecognizeRequest(streamingConfig: _buildStreamingConfig()),
     );
-
-    requestStream.add(StreamingRecognizeRequest(streamingConfig: config));
 
     final pcmFile = File(pcmFilePath);
     final audioStream = pcmFile.openRead();
@@ -59,14 +50,26 @@ class SttGrpcClient {
     await for (final response in responseStream) {
       for (var result in response.results) {
         if (result.alternatives.isNotEmpty) {
-          final transctipt = result.alternatives.first.transcript;
-          print('Recognized text: $transctipt');
-          onTextRecognized(transctipt);
+          final transcript = result.alternatives.first.transcript;
+          print('Recognized text: $transcript');
+          onTextRecognized(transcript);
         }
       }
     }
 
     print('StreamingRecognize complete.');
+  }
+
+  StreamingRecognitionConfig _buildStreamingConfig() {
+    return StreamingRecognitionConfig(
+      config: RecognitionConfig(
+        encoding: RecognitionConfig_AudioEncoding.LINEAR16,
+        sampleRateHertz: 16000,
+        languageCode: 'ko-KR',
+      ),
+      interimResults: true,
+      singleUtterance: false,
+    );
   }
 
   Future<void> shutdown() async {

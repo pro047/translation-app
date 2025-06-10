@@ -1,11 +1,15 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:trans_app/emitters/preacher_stt_emitter.dart';
-import 'package:trans_app/provider.dart';
+import 'package:trans_app/interfaces/word_emitter.dart';
+import 'package:trans_app/provider/google_auth_provider.dart';
+import 'package:trans_app/provider/provider.dart';
 import 'package:trans_app/screen/animation/mic_wave_bar.dart';
-import 'package:trans_app/service/youtube_streaming.dart/constants/hlst_url.dart';
-import 'package:trans_app/service/youtube_streaming.dart/extract_audio_stream.dart';
-import 'package:trans_app/service/youtube_streaming.dart/stt_grpc_client.dart';
+import 'package:trans_app/service/streaming/youtube_streaming.dart/constants/hlst_url.dart';
+import 'package:trans_app/service/streaming/youtube_streaming.dart/extract_audio_stream.dart';
+import 'package:trans_app/service/streaming/youtube_streaming.dart/file_streaming_rest_stt.dart';
 
 class PreacherSttScreen extends ConsumerStatefulWidget {
   const PreacherSttScreen({super.key});
@@ -32,7 +36,7 @@ class _PreacherSttScreenState extends ConsumerState<PreacherSttScreen> {
           );
   }
 
-  void toggleListening(PreacherSttEmitter emitter) {
+  void toggleListening(WordEmitter emitter) {
     setState(() {
       if (_isListening) {
         emitter.stop();
@@ -49,7 +53,7 @@ class _PreacherSttScreenState extends ConsumerState<PreacherSttScreen> {
               _soundLevel = level;
             });
           },
-          localeId: ref.read(sourceLangProvider) == 'KO' ? 'ko_KR' : 'en_US',
+          // localeId: ref.read(sourceLangProvider) == 'KO' ? 'ko_KR' : 'en_US',
         );
         _isListening = true;
       }
@@ -58,7 +62,7 @@ class _PreacherSttScreenState extends ConsumerState<PreacherSttScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final emitter = ref.read(preacherSttEmitterProvider);
+    final emitter = ref.read(wordEmitterProvider);
     final currentTarget = ref.watch(targetLangProvider);
     final log = ref.watch(logProvider);
 
@@ -108,13 +112,13 @@ class _PreacherSttScreenState extends ConsumerState<PreacherSttScreen> {
                   ],
                 ),
               ),
-              // SizedBox(height: 20),
-              // Expanded(
-              //   child: SingleChildScrollView(
-              //     padding: EdgeInsets.all(16),
-              //     child: Text(log, style: TextStyle(fontSize: 16)),
-              //   ),
-              // ),
+              SizedBox(height: 20),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(16),
+                  child: Text(log, style: TextStyle(fontSize: 16)),
+                ),
+              ),
               SizedBox(height: 50),
               ElevatedButton(
                 onPressed: () {
@@ -134,19 +138,32 @@ class _PreacherSttScreenState extends ConsumerState<PreacherSttScreen> {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  final sttClient = SttGrpcClient();
+                  final hlsUrl = Constants.hlsUrl;
+                  final pcmFilePath = await extractAudioStream(hlsUrl);
 
-                  await sttClient.streamRecognizeFromPcmFile(
-                    pcmFilePath:
-                        '/data/user/0/com.example.trans_app/app_flutter/output_1749376121078.pcm',
-                    onTextRecognized: (text) {
-                      print('실시간 인식 결과 : $text');
+                  final sttClient = FileStreamingRestSttClient(
+                    GoogleAuthProvider('lib/assets/google_auth.json'),
+                  );
+
+                  sttClient.startStreaming(
+                    onRecognized: (recognizedText) {
+                      recognizedText.split(' ').forEach((word) {
+                        ref.read(wordQueueProvider).addWord(word);
+                      });
                     },
                   );
 
-                  await sttClient.shutdown();
+                  final pcmStream = File(pcmFilePath).openRead();
+
+                  await for (final chunk in pcmStream) {
+                    final pcmBytes = Uint8List.fromList(chunk);
+                    sttClient.sendAudioChunk(pcmBytes);
+                    await Future.delayed(Duration(milliseconds: 100));
+                  }
+
+                  await sttClient.stopStreaming();
                 },
-                child: Text('STT 테스트 실해'),
+                child: Text('STT 테스트 실행'),
               ),
             ],
           ),

@@ -2,15 +2,19 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:trans_app/screen/church_auth_qr.dart';
 import 'package:trans_app/screen/role_selection.dart';
 import 'package:trans_app/service/foreground/init_task.dart';
+import 'package:trans_app/service/web_socket/web_socket.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp();
+
   FlutterForegroundTask.initCommunicationPort();
   await initForegroundTask();
+
+  WebSocketService().init();
   runApp(ProviderScope(child: MyApp()));
 }
 
@@ -44,7 +48,7 @@ class MyApp extends StatelessWidget {
         dividerColor: Color(0xffe5e7eb),
       ),
       routes: {'/role-selection': (context) => RoleSelectionScreen()},
-      home: ChurchAuthScreen(),
+      home: RoleSelectionScreen(),
     );
   }
 }

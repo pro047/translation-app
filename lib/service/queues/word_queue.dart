@@ -23,6 +23,7 @@ class WordQueue {
     if (word.trim().isEmpty) return;
 
     _wordBuffer.add(word);
+    print('wordQueueBuffer: $_wordBuffer');
     onLog?.call('WordQueueBuffer: $_wordBuffer');
 
     final now = DateTime.now();
@@ -30,6 +31,7 @@ class WordQueue {
     final full = _wordBuffer.isNotEmpty;
 
     if (expired || full) {
+      print('expired or full => emit');
       onLog?.call('expired or full => emit');
       _emitChunk();
     }
@@ -43,6 +45,7 @@ class WordQueue {
   }
 
   void _emitChunk() {
+    print('[wordQueue] queue emit');
     onLog?.call('[wordQueue] queue emit');
     receiver.receive(_wordBuffer.toList());
     _wordBuffer.clear();

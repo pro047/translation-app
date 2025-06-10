@@ -4,7 +4,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:trans_app/provider.dart';
+import 'package:trans_app/provider/provider.dart';
 import 'package:trans_app/service/api/firebase_service.dart';
 
 class ListenerScreen extends ConsumerStatefulWidget {

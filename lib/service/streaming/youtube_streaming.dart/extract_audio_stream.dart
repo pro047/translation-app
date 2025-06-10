@@ -4,7 +4,7 @@ import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:path_provider/path_provider.dart';
 
-Future<void> extractAudioStream(String hlsUrl) async {
+Future<String> extractAudioStream(String hlsUrl) async {
   final String pcmOutputPath = await getOutputPath();
 
   final String ffmpegcommand =
@@ -34,6 +34,7 @@ Future<void> extractAudioStream(String hlsUrl) async {
       print('Audio stream extraction failed. Return code: $returnCode');
     }
   });
+  return pcmOutputPath;
 }
 
 Future<String> getOutputPath() async {

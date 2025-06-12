@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:audio_streamer/audio_streamer.dart';
@@ -15,8 +17,18 @@ class WebSocketService {
   late WebSocketChannel _channel;
   late AudioStreamer _audioStreamer;
   bool _checkActualSampleRate = false;
+  bool _isInitialized = false;
+
+  final List<double> _frameBuffer = [];
+
+  final StreamController<String> _finalTranscriptController =
+      StreamController.broadcast();
+
+  Stream<String> get finalTranscriptStream => _finalTranscriptController.stream;
 
   void init() {
+    if (_isInitialized) return;
+
     final _channel = WebSocketChannel.connect(
       Uri.parse('ws://172.30.1.90:5001'),
     );
@@ -31,12 +43,29 @@ class WebSocketService {
         _checkActualSampleRate = true;
       }
 
-      Uint8List pcmChunk = floatToPCMInt16(floatSamples);
-      _channel.sink.add(pcmChunk);
+      _frameBuffer.addAll(floatSamples);
+
+      const int frameSize = 320;
+
+      while (_frameBuffer.length >= frameSize) {
+        final frame = _frameBuffer.sublist(0, frameSize);
+        _frameBuffer.removeRange(0, frameSize);
+
+        Uint8List pcmChunk = floatToPCMInt16(frame);
+        _channel.sink.add(pcmChunk);
+      }
     });
 
     _channel.stream.listen(
       (message) {
+        final data = jsonDecode(message);
+        final transcript = data['transcript'];
+        final isFinal = data['isFinal'] ?? false;
+
+        if (isFinal) {
+          print('[Final] $transcript');
+          _finalTranscriptController.add(transcript);
+        }
         print('Received from server : $message');
       },
       onError: (error) {
@@ -46,6 +75,8 @@ class WebSocketService {
         print('Websocket closed');
       },
     );
+
+    _isInitialized = true;
   }
 
   // Future<void> _checkActualSampleRate() async {
@@ -54,7 +85,11 @@ class WebSocketService {
   // }
 
   void dispose() {
+    if (!_isInitialized) return;
+    _finalTranscriptController.close();
     _channel.sink.close();
+    _frameBuffer.clear();
+    _isInitialized = false;
   }
 }
 

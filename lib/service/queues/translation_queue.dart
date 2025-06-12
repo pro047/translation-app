@@ -6,10 +6,10 @@ import 'package:trans_app/service/api/translation_service.dart';
 
 class TranslationQueue implements SentenceTranslator {
   final void Function(String message)? onLog;
+  final Queue<String> _queue = Queue();
+  final Set<String> _existingSentences = {};
   final String targetLang;
   final String sourceLang;
-
-  final Queue<String> _queue = Queue();
   final Stopwatch _stopwatch = Stopwatch();
 
   bool _isTranslating = false;
@@ -22,15 +22,15 @@ class TranslationQueue implements SentenceTranslator {
 
   @override
   void add(String sentence) {
-    if (_queue.contains(sentence)) {
+    if (_existingSentences.contains(sentence)) {
       onLog?.call('[중복 문장으로 번역 건너뜀] $sentence');
       return;
     }
 
-    _queue.add(sentence);
-
-    onLog?.call('[큐에 추가] : $sentence');
-    onLog?.call('[현재 큐 상태] : $_queue');
+    if (_existingSentences.add(sentence)) {
+      _queue.add(sentence);
+      print('😀 큐에 추가');
+    }
 
     if (!_isTranslating) {
       _startTranslate();
@@ -72,6 +72,7 @@ class TranslationQueue implements SentenceTranslator {
       onLog?.call('번역 실패 : $err');
       onLog?.call('$stack');
     } finally {
+      _existingSentences.remove(sentence);
       _isTranslating = false;
       _startTranslate();
     }

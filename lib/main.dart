@@ -2,9 +2,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:trans_app/screen/role_selection.dart';
+import 'package:trans_app/screen/mode_selection_screen.dart';
 import 'package:trans_app/service/foreground/init_task.dart';
-import 'package:trans_app/service/web_socket/web_socket.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,7 +13,6 @@ void main() async {
   FlutterForegroundTask.initCommunicationPort();
   await initForegroundTask();
 
-  WebSocketService().init();
   runApp(ProviderScope(child: MyApp()));
 }
 
@@ -47,8 +45,7 @@ class MyApp extends StatelessWidget {
         cardColor: Colors.white,
         dividerColor: Color(0xffe5e7eb),
       ),
-      routes: {'/role-selection': (context) => RoleSelectionScreen()},
-      home: RoleSelectionScreen(),
+      home: ModeSelectionScreen(),
     );
   }
 }

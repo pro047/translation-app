@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:trans_app/screen/listener.dart';
-import 'package:trans_app/screen/preacher_screen.dart';
+import 'package:trans_app/screen/role_selection.dart';
+import 'package:trans_app/screen/stream_screen.dart';
 
-class RoleSelectionScreen extends StatelessWidget {
-  const RoleSelectionScreen({super.key});
+class ModeSelectionScreen extends StatelessWidget {
+  const ModeSelectionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +20,7 @@ class RoleSelectionScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  '역할을 선택해주세요\nPlease select Role',
+                  '번역 방식을 선택해주세요\nPlease select Translation method',
                   style: TextStyle(fontSize: 20),
                 ),
                 SizedBox(height: 100),
@@ -31,20 +31,22 @@ class RoleSelectionScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => MicScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => RoleSelectionScreen(),
+                          ),
                         );
                       },
-                      child: Text('설교자 Preacher'),
+                      child: Text('마이크 Mic'),
                     ),
 
                     ElevatedButton(
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => ListenerScreen()),
+                          MaterialPageRoute(builder: (_) => StreamScreen()),
                         );
                       },
-                      child: Text('청중 Listener'),
+                      child: Text('유튜브 Youtube'),
                     ),
                   ],
                 ),

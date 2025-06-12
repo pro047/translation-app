@@ -1,15 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:trans_app/emitters/file_streaming_rest_stt_emitter.dart';
+import 'package:trans_app/emitters/mic_websocket_word_emitter.dart';
+import 'package:trans_app/emitters/stream_websocket_word_emitter.dart';
 import 'package:trans_app/interfaces/sentence_receiver.dart';
 import 'package:trans_app/interfaces/sentence_translator.dart';
 import 'package:trans_app/interfaces/word_emitter.dart';
-import 'package:trans_app/provider/google_auth_provider.dart';
+import 'package:trans_app/interfaces/youtube_word_emitter.dart';
 import 'package:trans_app/service/queues/translation_queue.dart';
 import 'package:trans_app/service/queues/validateQueue/en_to_ko_queue.dart';
 import 'package:trans_app/service/queues/validateQueue/ko_to_en_queue.dart';
 
 import 'package:trans_app/service/queues/word_queue.dart';
-import 'package:trans_app/service/streaming/youtube_streaming.dart/file_streaming_rest_stt.dart';
 
 final logProvider = StateProvider<String>((ref) => 'log start\n');
 final targetLangProvider = StateProvider<String>((ref) => 'EN');
@@ -52,8 +52,10 @@ final wordQueueProvider = Provider<WordQueue>(
   ),
 );
 
-final wordEmitterProvider = Provider<WordEmitter>((ref) {
-  final authProvider = GoogleAuthProvider('lib/assets/google_auth.json');
-  final sttClient = FileStreamingRestSttClient(authProvider);
-  return FileStreamingRestSttEmitter(sttClient);
+final webSocketWordEmitterProvider = Provider<WordEmitter>((ref) {
+  return WebSocketWordEmitter();
+});
+
+final streamWebSocketWordEmitterProvider = Provider<YoutubeWordEmitter>((ref) {
+  return StreamWebsocketWordEmitter();
 });

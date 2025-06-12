@@ -8,6 +8,7 @@ class WordQueue {
 
   final SentenceReceiver receiver;
   final Duration maxDuration;
+  final int maxQueueLength;
 
   final void Function(String message)? onLog;
 
@@ -15,6 +16,7 @@ class WordQueue {
     this.onLog,
     required this.receiver,
     this.maxDuration = const Duration(seconds: 6),
+    this.maxQueueLength = 10,
   });
 
   void addWord(String word) {
@@ -28,18 +30,11 @@ class WordQueue {
 
     final now = DateTime.now();
     final expired = now.difference(_start) > maxDuration;
-    final full = _wordBuffer.isNotEmpty;
+    final full = _wordBuffer.length >= maxQueueLength;
 
     if (expired || full) {
       print('expired or full => emit');
       onLog?.call('expired or full => emit');
-      _emitChunk();
-    }
-  }
-
-  void flush() {
-    if (_wordBuffer.isNotEmpty) {
-      onLog?.call('flush => emit');
       _emitChunk();
     }
   }

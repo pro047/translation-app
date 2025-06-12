@@ -1,9 +1,12 @@
+import 'dart:collection';
+
 import 'package:trans_app/interfaces/sentence_receiver.dart';
 import 'package:trans_app/interfaces/sentence_translator.dart';
 import 'package:trans_app/utils/EnToKo/addreviations_list.dart';
 import 'package:trans_app/utils/EnToKo/conjunction_list.dart';
 
 class EnToKoValidateQueue implements SentenceReceiver {
+  final Queue<String> _sentenceBuffer = Queue();
   final SentenceTranslator translator;
   final void Function(String message)? onLog;
 
@@ -29,15 +32,17 @@ class EnToKoValidateQueue implements SentenceReceiver {
     final firstWord = sentence.split(' ').first;
     onLog?.call('firstword : $firstWord');
 
-    if (!_isLikelySentenceComplete(sentence, firstWord)) {
+    if (_isLikelySentenceComplete(sentence, firstWord)) {
+      _sentenceBuffer.add(sentence);
+      _listeningStart = now;
+      _lastSpoken = now;
+    } else {
       onLog?.call('isLikelySentenceComplete fail');
-      return;
     }
 
-    _send(sentence);
-
-    _listeningStart = now;
-    _lastSpoken = now;
+    if (_sentenceBuffer.length >= 5) {
+      _send();
+    }
   }
 
   bool _isEmpty(String sentence) => sentence.isEmpty;
@@ -77,8 +82,11 @@ class EnToKoValidateQueue implements SentenceReceiver {
     return false;
   }
 
-  void _send(String sentence) {
+  void _send() {
     onLog?.call('send success');
-    translator.add(sentence);
+    for (final sentence in _sentenceBuffer) {
+      translator.add(sentence);
+    }
+    _sentenceBuffer.clear();
   }
 }

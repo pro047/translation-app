@@ -4,6 +4,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:trans_app/data/dto/transcript_data.dart';
 import 'package:trans_app/interfaces/youtube_word_emitter.dart';
 import 'package:trans_app/provider/provider.dart';
 import 'package:trans_app/service/api/firebase_service.dart';
@@ -63,8 +64,11 @@ class _StreamScreenState extends ConsumerState<StreamScreen> {
         final sessionId = result['sessionId'];
         _currentSessionId = sessionId;
 
-        emitter.start((word) {
-          ref.read(wordQueueProvider).addWord(word);
+        emitter.start((TranscriptData data) {
+          ref.read(wordQueueManagerProvider);
+          ref.read(validQueueManagerProvider);
+          ref.read(transQueueManagerProvider);
+          ref.read(wordQueueProvider).add(data);
         }, websocketUrl: webSocketUrl);
 
         print('Started translation with sessionId: $sessionId');

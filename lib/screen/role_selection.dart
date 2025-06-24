@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:trans_app/screen/listener.dart';
-import 'package:trans_app/screen/preacher_screen.dart';
+import 'package:trans_app/screen/mic_screen.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});

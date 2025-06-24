@@ -1,9 +1,12 @@
+import 'package:trans_app/data/dto/transcript_data.dart';
+
 abstract class YoutubeWordEmitter {
   void start(
-    void Function(String word) onWord, {
+    void Function(TranscriptData data)? onWord, {
     void Function(String status)? onStatus,
     void Function(String error)? onError,
     required String websocketUrl,
+    String localeId,
   });
-  void stop();
+  Future<void> stop();
 }

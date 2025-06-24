@@ -1,31 +1,40 @@
 import 'dart:async';
 
+import 'package:trans_app/data/dto/transcript_data.dart';
 import 'package:trans_app/interfaces/youtube_word_emitter.dart';
 import 'package:trans_app/service/web_socket/youtube_websocket/streaming_websocket.dart';
 
 class StreamWebsocketWordEmitter implements YoutubeWordEmitter {
-  late void Function(String word) _onWord;
-  late StreamSubscription<String> _subscription;
-  final StreamingWebsocket _websocket = StreamingWebsocket();
+  void Function(TranscriptData data)? _onWord;
+  StreamSubscription<TranscriptData>? _subscription;
+  StreamingWebsocket? _websocket;
 
   bool _isListening = false;
 
   @override
   void start(
-    void Function(String word) onWord, {
+    void Function(TranscriptData data)? onWord, {
     void Function(String status)? onStatus,
     void Function(String error)? onError,
     required String websocketUrl,
     String localeId = 'ko_KR',
   }) async {
-    await _websocket.startListening(websocketUrl);
+    await stop();
+
+    _websocket = StreamingWebsocket();
+    await _websocket!.startListening(websocketUrl);
 
     _onWord = onWord;
     _isListening = true;
 
-    _subscription = _websocket.finalTranscriptStream.listen((transcript) {
+    _subscription = _websocket!.finalTranscriptStream.listen((data) {
       if (_isListening) {
-        transcript.split(' ').forEach(_onWord);
+        final words = data.transcript.split(' ');
+        for (final word in words) {
+          _onWord?.call(
+            TranscriptData(transcript: word, isFinal: data.isFinal),
+          );
+        }
       }
     });
 
@@ -35,8 +44,9 @@ class StreamWebsocketWordEmitter implements YoutubeWordEmitter {
   @override
   Future<void> stop() async {
     _isListening = false;
-    await _subscription.cancel();
-    await _websocket.dispose();
+    await _subscription?.cancel();
+    await _websocket?.dispose();
+    _websocket = null;
     print('StreamWebSocketWordEmitter stopped');
   }
 }

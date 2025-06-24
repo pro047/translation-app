@@ -1,3 +1,3 @@
 abstract class SentenceReceiver {
-  void receive(List<String> words);
+  void receive(String word, {required bool isFinal});
 }

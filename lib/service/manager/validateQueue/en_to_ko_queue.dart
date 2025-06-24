@@ -17,9 +17,9 @@ class EnToKoValidateQueue implements SentenceReceiver {
   EnToKoValidateQueue({required this.translator, this.onLog});
 
   @override
-  void receive(List<String> words) {
+  void receive(String word, {required bool isFinal}) {
     final now = DateTime.now();
-    final sentence = words.join(' ').trim();
+    final sentence = word.trim();
 
     onLog?.call('EnToKo receive');
 

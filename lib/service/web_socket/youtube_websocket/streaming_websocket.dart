@@ -2,82 +2,98 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:trans_app/data/dto/transcript_data.dart';
 import 'package:web_socket_channel/io.dart';
 
 class StreamingWebsocket {
-  static final StreamingWebsocket _instance = StreamingWebsocket._internal();
-
-  factory StreamingWebsocket() {
-    return _instance;
-  }
-
-  StreamingWebsocket._internal() {
-    _finalTranscriptController = StreamController<String>.broadcast(
-      onCancel: () {
-        _isClosed = true;
-      },
-    );
-  }
-
-  bool _isInitialized = false;
-  bool _isClosed = false;
-
+  late WebSocket _rawSocket;
   late IOWebSocketChannel _channel;
-  late Process _ffmpegProcess;
-  late StreamController<String> _finalTranscriptController;
 
-  final ytDlpPath = '/opt/homebrew/bin/yt-dlp';
+  final _finalTranscriptController =
+      StreamController<TranscriptData>.broadcast();
 
-  Stream<String> get finalTranscriptStream => _finalTranscriptController.stream;
+  bool _isClosed = false;
+  String? _currentWebsocketUrl;
+
+  Stream<TranscriptData> get finalTranscriptStream =>
+      _finalTranscriptController.stream;
 
   Future<void> startListening(String websocketUrl) async {
-    if (_isInitialized) {
-      print('Already initialized');
-      return;
-    }
-
+    _currentWebsocketUrl = websocketUrl;
     try {
       await _connectWebsocket(websocketUrl);
       _listenWebsocket();
-      _isInitialized = true;
+      _isClosed = false;
     } catch (err) {
-      print('Error in streamLiveYoutubeAudio: $err');
-      await dispose();
+      print('start error : $err');
     }
   }
 
   Future<void> _connectWebsocket(String websocketUrl) async {
+    _rawSocket = await WebSocket.connect(websocketUrl);
     _channel = IOWebSocketChannel.connect(websocketUrl);
+  }
+
+  Future<void> reconnect() async {
+    if (_currentWebsocketUrl == null) {
+      print('🚙 Cannot reconnect: no websocketUrl saved');
+      return;
+    }
+
+    print('🚗 Reconnecting websocket $_currentWebsocketUrl');
+
+    await dispose();
+
+    _isClosed = false;
+
+    await _connectWebsocket(_currentWebsocketUrl!);
+    _listenWebsocket();
   }
 
   void _listenWebsocket() {
     _channel.stream.listen(
-      (message) {
+      (event) async {
         if (_isClosed) {
-          print('😡 Stream is closed, dropping message');
-          return;
-        }
-        final data = jsonDecode(message);
-        final transcript = data['transcript'];
-        _finalTranscriptController.add(transcript);
+          print('😡 Stream is closed, dropping event');
 
-        print('received from server : $message');
+          print('🚕 Attempting to reconnect ...');
+          await reconnect();
+        }
+        final json = jsonDecode(event);
+        final data = TranscriptData.fromJson(json);
+
+        _finalTranscriptController.add(data);
+
+        print('received from server : $event');
       },
-      onDone: () {
+      onDone: () async {
         print('websocket closed');
+
+        try {
+          print(
+            '💓 closeCode : ${_rawSocket.closeCode}, reason: ${_rawSocket.closeReason}',
+          );
+        } catch (_) {}
+
+        if (!_isClosed) {
+          print('🚕 Attempting to reconnect ...');
+          await reconnect();
+        }
       },
-      onError: (err) {
+      onError: (err) async {
         print('websocket error: $err');
+
+        if (!_isClosed) {
+          print('🚕 Attempting to reconnect ...');
+          await reconnect();
+        }
       },
     );
   }
 
   Future<void> dispose() async {
-    // if (!_isInitialized) return;
     _isClosed = true;
-    _isInitialized = false;
     await _finalTranscriptController.close();
     await _channel.sink.close();
-    _ffmpegProcess.kill(ProcessSignal.sigint);
   }
 }

@@ -1,16 +1,17 @@
 import 'dart:async';
 
+import 'package:trans_app/data/dto/transcript_data.dart';
 import 'package:trans_app/interfaces/word_emitter.dart';
 import 'package:trans_app/service/web_socket/mic_websocket.dart';
 
 class WebSocketWordEmitter implements WordEmitter {
   bool _isListening = false;
-  late void Function(String word) _onWord;
-  late StreamSubscription<String> _subscription;
+  void Function(TranscriptData data)? _onWord;
+  StreamSubscription<TranscriptData>? _subscription;
 
   @override
   void start(
-    void Function(String word) onWord, {
+    void Function(TranscriptData data) onWord, {
     void Function(String status)? onStatus,
     void Function(String error)? onError,
     void Function(double level)? onSoundLevel,
@@ -21,13 +22,14 @@ class WebSocketWordEmitter implements WordEmitter {
     _onWord = onWord;
     _isListening = true;
 
-    _subscription = WebSocketService().finalTranscriptStream.listen((
-      transcript,
-    ) {
+    _subscription = WebSocketService().finalTranscriptStream.listen((data) {
       if (_isListening) {
-        transcript.split(' ').forEach((word) {
-          _onWord(word);
-        });
+        final words = data.transcript.split(' ');
+        for (final word in words) {
+          _onWord?.call(
+            TranscriptData(transcript: word, isFinal: data.isFinal),
+          );
+        }
       }
     });
 
@@ -37,7 +39,7 @@ class WebSocketWordEmitter implements WordEmitter {
   @override
   void stop() {
     _isListening = false;
-    _subscription.cancel();
+    _subscription?.cancel();
     WebSocketService().dispose();
     print('WebSocketWordEmitter stoppped');
   }

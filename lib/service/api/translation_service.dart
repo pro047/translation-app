@@ -5,19 +5,15 @@ import 'package:http/http.dart' as http;
 class TranslationService {
   static const _proxyUrl = 'https://proxy.jinseong0477.workers.dev';
 
-  static Future<String?> translate(
-    String sentence,
-    String targetLang,
-    String sourceLang,
-  ) async {
+  static Future<String?> translate(String sentence) async {
     try {
       final response = await http.post(
         Uri.parse(_proxyUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'text': sentence,
-          'targetLang': targetLang,
-          'sourceLang': sourceLang,
+          'targetLang': 'en-US',
+          'sourceLang': 'ko-KR',
         }),
       );
 

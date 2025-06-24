@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:audio_streamer/audio_streamer.dart';
+import 'package:trans_app/data/dto/transcript_data.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WebSocketService {
@@ -21,10 +22,11 @@ class WebSocketService {
 
   final List<double> _frameBuffer = [];
 
-  final StreamController<String> _finalTranscriptController =
+  final StreamController<TranscriptData> _finalTranscriptController =
       StreamController.broadcast();
 
-  Stream<String> get finalTranscriptStream => _finalTranscriptController.stream;
+  Stream<TranscriptData> get finalTranscriptStream =>
+      _finalTranscriptController.stream;
 
   void init() {
     if (_isInitialized) return;

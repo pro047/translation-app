@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class RestApiService {
-  static const String _baseUrl = 'https://7448-220-124-99-7.ngrok-free.app';
+  static const String _baseUrl = 'https://2efe-220-124-99-7.ngrok-free.app';
 
   Future<Map<String, dynamic>> startTranslation(String youtubeUrl) async {
     final response = await http.post(

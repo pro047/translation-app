@@ -6,10 +6,10 @@ import 'package:trans_app/service/api/translation_service.dart';
 import 'package:trans_app/service/queue/trans_queue.dart';
 
 class TransQueueManager {
-  final TransQueue transQueue;
-  final List<TranscriptData> _buffer = [];
+  final TransQueue<TranscriptData> transQueue;
   final int maxQueueLength;
 
+  List<TranscriptData> _buffer = [];
   bool _isTranslating = false;
 
   TransQueueManager(this.transQueue, {this.maxQueueLength = 5}) {
@@ -21,14 +21,12 @@ class TransQueueManager {
       print('trnasQueue is full. Dropping : ${data.transcript}');
       return;
     }
-
-    transQueue.add(data);
     await process();
   }
 
   Future<void> process() async {
     if (_isTranslating) return;
-    // print('✅ transManager processing ... / isTranslating : $_isTranslating');
+    print('✅ transManager processing ... / isTranslating : $_isTranslating');
 
     if (transQueue.isNotEmpty) {
       final sentence = transQueue.remove();
@@ -40,14 +38,15 @@ class TransQueueManager {
       }
 
       final sentenceToTranslate = _buffer.first.transcript;
-      // print('‼️ sentenceToTranslate : $sentenceToTranslate');
 
+      _buffer = [];
       _isTranslating = true;
 
       try {
         final translated = await TranslationService.translate(
           sentenceToTranslate,
         );
+        print('번역 결과 : $sentenceToTranslate => $translated');
         if (translated != null) {
           await FirebaseService.pushTranslatedSentence(translated);
         }

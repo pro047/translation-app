@@ -65,10 +65,8 @@ class _StreamScreenState extends ConsumerState<StreamScreen> {
         _currentSessionId = sessionId;
 
         emitter.start((TranscriptData data) {
-          ref.read(wordQueueManagerProvider);
-          ref.read(validQueueManagerProvider);
           ref.read(transQueueManagerProvider);
-          ref.read(wordQueueProvider).add(data);
+          onTranscript(data);
         }, websocketUrl: webSocketUrl);
 
         print('Started translation with sessionId: $sessionId');
@@ -80,6 +78,12 @@ class _StreamScreenState extends ConsumerState<StreamScreen> {
         });
       }
     }
+  }
+
+  void onTranscript(TranscriptData data) {
+    final manager = ref.read(transcriptManagerProvider);
+    final queue = ref.read(transQueueProvider);
+    manager.addToTransQueue(data, queue);
   }
 
   @override

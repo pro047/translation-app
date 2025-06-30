@@ -38,9 +38,7 @@ class _MicScreenState extends ConsumerState<MicScreen> {
         });
       } else {
         emitter.start(
-          (data) {
-            ref.read(wordQueueProvider).add(data);
-          },
+          (data) {},
           onSoundLevel: (level) {
             setState(() {
               _soundLevel = level;

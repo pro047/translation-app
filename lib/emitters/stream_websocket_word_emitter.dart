@@ -29,12 +29,9 @@ class StreamWebsocketWordEmitter implements YoutubeWordEmitter {
 
     _subscription = _websocket!.finalTranscriptStream.listen((data) {
       if (_isListening) {
-        final words = data.transcript.split(' ');
-        for (final word in words) {
-          _onWord?.call(
-            TranscriptData(transcript: word, isFinal: data.isFinal),
-          );
-        }
+        _onWord?.call(
+          TranscriptData(transcript: data.transcript, isFinal: data.isFinal),
+        );
       }
     });
 

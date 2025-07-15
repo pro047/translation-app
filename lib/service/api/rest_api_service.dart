@@ -1,9 +1,10 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class RestApiService {
-  static const String _baseUrl = 'https://2efe-220-124-99-7.ngrok-free.app';
+  String _baseUrl = dotenv.get('NGROK_URL');
 
   Future<Map<String, dynamic>> startTranslation(String youtubeUrl) async {
     final response = await http.post(
@@ -11,6 +12,8 @@ class RestApiService {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'youtubeUrl': youtubeUrl}),
     );
+
+    print('요청 유알엘 : $_baseUrl/api/stt');
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);

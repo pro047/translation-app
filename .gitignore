@@ -38,6 +38,7 @@ profile
 Flutter/
 app.*.symbols
 app.*.map.json
+*.env
 
 # Android artifacts
 /android/app/debug

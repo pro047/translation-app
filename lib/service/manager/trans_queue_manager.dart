@@ -11,6 +11,7 @@ class TransQueueManager {
 
   List<TranscriptData> _buffer = [];
   bool _isTranslating = false;
+  String? lastTranslatedText;
 
   TransQueueManager(this.transQueue, {this.maxQueueLength = 5}) {
     transQueue.onAdd.listen((_) => process());
@@ -38,6 +39,12 @@ class TransQueueManager {
       }
 
       final sentenceToTranslate = _buffer.first.transcript;
+      if (sentenceToTranslate == lastTranslatedText) {
+        print('⏭️ skipping duplicate sentece');
+        return;
+      }
+
+      lastTranslatedText = sentenceToTranslate;
 
       _buffer = [];
       _isTranslating = true;

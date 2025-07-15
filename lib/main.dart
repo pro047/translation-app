@@ -4,6 +4,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trans_app/screen/mode_selection_screen.dart';
 import 'package:trans_app/service/foreground/init_task.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +13,8 @@ void main() async {
 
   FlutterForegroundTask.initCommunicationPort();
   await initForegroundTask();
+
+  await dotenv.load(fileName: '.env');
 
   runApp(ProviderScope(child: MyApp()));
 }

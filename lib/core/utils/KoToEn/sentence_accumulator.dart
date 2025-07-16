@@ -1,4 +1,4 @@
-import 'package:trans_app/utils/KoToEn/church_sentence_endings.dart';
+import 'package:trans_app/core/utils/KoToEn/church_sentence_endings.dart';
 
 class SentenceAccumulator {
   final Duration maxListeningDuration;

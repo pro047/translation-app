@@ -8,7 +8,7 @@ import 'package:trans_app/service/manager/trans_queue_manager.dart';
 import 'package:trans_app/service/manager/transcript_manager.dart';
 import 'package:trans_app/service/queue/trans_queue.dart';
 
-import 'package:trans_app/utils/KoToEn/sentence_accumulator.dart';
+import 'package:trans_app/core/utils/KoToEn/sentence_accumulator.dart';
 
 final logProvider = StateProvider<String>((ref) => 'log start\n');
 final targetLangProvider = StateProvider<String>((ref) => 'EN');

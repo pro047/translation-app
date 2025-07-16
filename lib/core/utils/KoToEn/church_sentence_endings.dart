@@ -1,4 +1,4 @@
-import 'package:trans_app/utils/KoToEn/sentence_ending_list.dart';
+import 'package:trans_app/core/utils/KoToEn/sentence_ending_list.dart';
 
 bool isChurchSentenceComplete({
   required String text,
